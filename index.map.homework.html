@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+ <title>My Current Location Map</title>
+ <meta charset="utf-8" />
+ <link rel="stylesheet" href="https://api-maps.yandex.ru/2.1/?lang=en_US" type="text/css" />
+ <style>
+ #map { height: 600px; width: 100%; }
+ </style>
+</head>
+<body>
+ <div id="map"></div>
+<script src="https://api-maps.yandex.ru/2.1/?lang=en_US&apikey=YOUR_API_KEY" type="text/javascript"></script>
+ <script>
+ ymaps.ready(init);
+
+ function init() {
+ var myCoordinates = [58.053707, 56.218273];
+
+ var map = new ymaps.Map('map', {
+     center: myCoordinates,
+     zoom: 10, 
+     controls: ['zoomControl', 'fullscreenControl', 'geolocationControl']
+ });
+
+
+ var myPlacemark = new ymaps.Placemark(myCoordinates, {
+     hintContent: 'My Current Location',
+     balloonContent: 'This is where I am!'
+ });
+ map.geoObjects.add(myPlacemark);
+ } 
+ </script>
+</body>
+</html>

@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <h1>Gragh</h1>
+    <canvas id="myChart"></canvas>
+
+</body>
+<script>
+  function csvJSON(csv) {
+    var lines = csv.split("\n");
+    var result = [];
+    var headers = lines[0].split(",");
+    for (var i = 1; i < lines.length; i++) {
+      var obj = {};
+      var currentline = lines[i].split(",");
+      for (var j = 0; j < headers.length; j++) {
+        obj[headers[j]] = currentline[j];
+      }
+      result.push(obj);
+    }
+    return result; //JSON
+  }
+
+  async function getData(path) {
+    const data = await fetch(path);
+    const csv = await data.text();
+    const result = csvJSON(csv);
+    return result;
+  }
+
+</script>
+
+<script>
+    const ctx = document.getElementById('myChart');
+  
+    new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: ['Red', 'Blue', 'Yellow', 'Green', 'Purple', 'Orange'],
+        datasets: [{
+          label: '# of Votes',
+          data: [12, 19, 3, 5, 2, 3],
+          borderWidth: 1
+        }]
+      },
+      options: {
+        scales: {
+          y: {
+            beginAtZero: true
+          }
+        }
+      }
+    });
+  </script>
+<script>
+    const ctx = document.getElementById("myChart1");
+    getData("./students_large.csv").then((file) => {
+      console.log(file);
+
+      // Prepare data
+      const students = file.map((each) => ({
+        x: each.study_hours,
+        y: each.score,
+        r: each.salary / 1000,
+        g: each.sex,
+      }));
+
+      new Chart(ctx, {
+        type: "bubble",
+        data: {
+          labels: file.map((e) => e.score),
+          datasets: [
+            {
+              label: "Man marks",
+              data: students.filter((s) => s.g === "Male"),
+              borderWidth: 1,
+            },
+            {
+              label: "Woman marks",
+              data: students.filter((s) => s.g === "Female"),
+              borderWidth: 1,
+            },
+          ],
+        },
+      });
+      
+    });
+  </script>
+</html>

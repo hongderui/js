@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Region Map</title>
+    <meta charset="utf-8" />
+    <style>
+        #map { height: 600px; width: 100%; } 
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    <script src="https://api-maps.yandex.ru/2.1/?lang=ru_RU&apikey=43b864cd-fce8-474d-b4ba-192753074cb1" type="text/javascript"></script>
+    <script>
+        ymaps.ready(init);
+
+        function init() {
+            
+            var map = new ymaps.Map('map', {
+                center: [48.8566, 2.3522], 
+                zoom: 7,
+                controls: ['zoomControl', 'fullscreenControl']
+            });
+
+            fetch('regions.geojson.json')
+                .then(response => response.json())
+                .then(data => {
+                    console.log(data); 
+
+                
+                    var geoObjects = ymaps.geoQuery(ymaps.geoJson.data.geometryToGeoObjects(data));
+                    geoObjects.addToMap(map);
+
+                
+                    var bounds = geoObjects.getBounds();
+                    map.setBounds(bounds, { checkZoomRange: true });
+                })
+                .catch(error => console.error('Error loading the regions:', error));
+        }
+    </script>
+</body>
+</html>

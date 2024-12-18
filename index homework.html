@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Diabetes Dataset Charts</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+<h2>Bar Chart: Glucose Levels Over Time (Example)</h2>
+<canvas id="chart1" width="400" height="400"></canvas>
+
+<h2>Line Chart: Glucose Levels Over Time (Example)</h2>
+<canvas id="chart2" width="400" height="400"></canvas>
+
+<h2>Scatter Plot: BMI vs. Glucose Level</h2>
+<canvas id="chart3" width="400" height="400"></canvas>
+
+<h2>Pie Chart: Age Distribution</h2>
+<canvas id="chart4" width="400" height="400"></canvas>
+
+<h2>Mixed Chart: BMI Distribution with Average Line</h2>
+<canvas id="chart5" width="400" height="400"></canvas>
+
+<script>
+  // 解析CSV数据
+  function parseCSV(csv) {
+    const lines = csv.split('\n');
+    const headers = lines[0].split(',');
+    const data = [];
+
+    for (let i = 1; i < lines.length; i++) {
+      const obj = {};
+      const currentLine = lines[i].split(',');
+
+      for (let j = 0; j < headers.length; j++) {
+        obj[headers[j]] = parseFloat(currentLine[j]);
+      }
+
+      data.push(obj);
+    }
+    return data;
+  }
+
+  async function getData(url) {
+    const response = await fetch(url);
+    const text = await response.text();
+    return parseCSV(text);
+  }
+
+  document.addEventListener('DOMContentLoaded', async () => {
+    try {
+      const diabetesData = await getData('./diabetes.csv');
+
+      // 计算平均值
+      const avgValues = {};
+      const featureNames = ['Pregnancies', 'Glucose', 'BloodPressure', 'SkinThickness', 'Insulin', 'BMI', 'DiabetesPedigreeFunction', 'Age'];
+
+      featureNames.forEach(feature => {
+        avgValues[feature] = diabetesData.reduce((sum, row) => sum + row[feature], 0) / diabetesData.length;
+      });
+
+      const avgKeys = Object.keys(avgValues);
+      const avgData = Object.values(avgValues);
+
+      // 统计Outcome分布
+      const outcomeCounts = {
+        negative: diabetesData.filter(d => d.Outcome === 0).length,
+        positive: diabetesData.filter(d => d.Outcome === 1).length
+      };
+
+      // 年龄分布
+      const ageDistribution = diabetesData.reduce((acc, row) => {
+        const ageGroup = Math.floor((row.Age || 0) / 10) * 10;
+        acc[ageGroup] = (acc[ageGroup] || 0) + 1;
+        return acc;
+      }, {});
+
+      const ageLabels = Object.keys(ageDistribution).map(k => `${k}-${parseInt(k) + 10}`);
+      const ageData = Object.values(ageDistribution);
+
+      // BMI分布
+      const bmiData = diabetesData.map(d => d.BMI);
+      const bmiCounts = bmiData.reduce((acc, bmi) => {
+        const bmiGroup = Math.floor(bmi / 5) * 5; // 每5个单位为一组
+        acc[bmiGroup] = (acc[bmiGroup] || 0) + 1;
+        return acc;
+      }, {});
+
+      const bmiLabels = Object.keys(bmiCounts).map(k => `${k}-${parseInt(k) + 5}`);
+      const bmiDataValues = Object.values(bmiCounts);
+
+      // 第一个柱状图：血糖水平随时间变化
+      new Chart(document.getElementById('chart1'), {
+        type: 'bar',
+        data: {
+          labels: Array.from({ length: 10 }, (_, i) => `Time ${i}`),
+          datasets: [{
+            label: 'Glucose Levels',
+            data: diabetesData.slice(0, 10).map(d => d.Glucose),
+            backgroundColor: 'rgba(255, 99, 132, 0.2)',
+            borderColor: 'rgba(255, 99, 132, 1)',
+            borderWidth: 1
+          }]
+        },
+        options: {
+          scales: {
+            x: { title: { display: true, text: 'Time' } },
+            y: { beginAtZero: true, title: { display: true, text: 'Glucose Level' } }
+          }
+        }
+      });
+
+      // 第二个折线图：血糖水平随时间变化
+      new Chart(document.getElementById('chart2'), {
+        type: 'line',
+        data: {
+          datasets: [{
+            label: 'Glucose Levels',
+            data: diabetesData.slice(0, 10).map((d, i) => ({ x: i, y: d.Glucose })),
+            fill: false,
+            borderColor: 'rgb(75, 192, 192)',
+            tension: 0.1
+          }]
+        },
+        options: {
+          scales: {
+            x: { type: 'linear', position: 'bottom', title: { display: true, text: 'Time' } },
+            y: { beginAtZero: true, title: { display: true, text: 'Glucose Level' } }
+          }
+        }
+      });
+
+      // 散点图
+      new Chart(document.getElementById('chart3'), {
+        type: 'scatter',
+        data: {
+          datasets: [{
+            label: 'BMI vs. Glucose',
+            data: diabetesData.map(d => ({ x: d.BMI, y: d.Glucose })),
+            backgroundColor: 'rgba(255, 99, 132, 0.2)',
+            borderColor: 'rgba(255, 99, 132, 1)',
+            borderWidth: 1
+          }]
+        },
+        options: {
+          scales: {
+            x: { title: { display: true, text: 'BMI' } },
+            y: { title: { display: true, text: 'Glucose Level' } }
+          }
+        }
+      });
+
+      // 饼图：年龄分布
+      new Chart(document.getElementById('chart4'), {
+        type: 'pie',
+        data: {
+          labels: ageLabels,
+          datasets: [{
+            data: ageData,
+            backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF']
+          }]
+        },
+        options: {}
+      });
+
+      // 混合图：BMI分布
+      new Chart(document.getElementById('chart5'), {
+        type: 'bar', // 使用bar类型，但会在data中添加line数据
+        data: {
+          labels: bmiLabels,
+          datasets: [
+            {
+              type: 'bar',
+              label: 'BMI Distribution',
+              data: bmiDataValues,
+              backgroundColor: 'rgba(255, 99, 132, 0.2)',
+              borderColor: 'rgba(255, 99, 132, 1)',
+              borderWidth: 1
+            },
+            {
+              type: 'line',
+              label: 'Average BMI',
+              data: bmiLabels.map(() => avgValues['BMI']),
+              fill: false,
+              borderColor: 'rgb(75, 192, 192)',
+              tension: 0.1
+            }
+          ]
+        },
+        options: {
+          scales: {
+            x: { title: { display: true, text: 'BMI Range' } },
+            y: { 
+              beginAtZero: true, 
+              title: { display: true, text: 'Count / Average BMI' } 
+            }
+          }
+        }
+      });
+    } catch (error) {
+      console.error('Error loading or processing data:', error);
+    }
+  });
+</script>
+</body>
+</html>
+
+
